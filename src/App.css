@@ -13,10 +13,25 @@ main {
   width: 100%;
 }
 
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
 form {
   align-items: center;
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  gap: 1rem;
+
+  .input-container {
+    display: flex;
+    gap: 0.5rem;
+  }
 }
 
 .movies {
