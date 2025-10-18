@@ -1,12 +1,12 @@
 import './App.css'
 /**
- * useRef hook que permite crear una referencia mutable
- * que persiste durante todo el ciclo de vida del componente
- * y no cambia el renderizado del componente
+ * useRef is a hook that allows you to create a mutable reference
+ * that persists throughout the component's lifecycle
+ * and does not trigger a re-render when its value changes.
  */
 import { useState, useRef, useMemo, useCallback } from 'react'
-import { Movies } from './components/Movies'
-import { useMovies } from './hooks/useMovies'
+import { Films } from './components/Films'
+import { useFilms } from './hooks/useFilms'
 import debounce from 'just-debounce-it'
 
 const useSearch = () => {
@@ -25,11 +25,11 @@ const useSearch = () => {
     }
 
     if (newSearch === '') {
-      setError('No se puede buscar una película vacía')
+      setError('You cannot search for an empty film')
     } else if (newSearch.match(/^\d+$/)) {
-      setError('No se puede buscar una película con un número')
+      setError('You cannot search for a film with a number')
     } else if (newSearch.length < 3) {
-      setError('La búsqueda debe tener al menos 3 caracteres')
+      setError('The search must have at least 3 characters')
     } else {
       setError(null)
     }
@@ -42,18 +42,18 @@ const useSearch = () => {
 function App() {
   const [sort, setSort] = useState(false)
   const { search, updateSearch, error } = useSearch()
-  const { movies, getMovies, loading } = useMovies({ search, sort })
+  const { films, getFilms, loading } = useFilms({ search, sort })
 
-  const debouncedGetMovies = useMemo(
+  const debouncedGetFilms = useMemo(
     () => debounce(search => {
-      getMovies({ search })
+      getFilms({ search })
     }, 300)
-    , [getMovies]
+    , [getFilms]
   )
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    getMovies({ search })
+    getFilms({ search })
   }
 
   const handleSort = () => {
@@ -63,13 +63,13 @@ function App() {
   const handleChange = (event) => {
     const newSearch = event.target.value
     updateSearch(newSearch)
-    debouncedGetMovies(newSearch)
+    debouncedGetFilms(newSearch)
   }
 
   return (
     <div className="page">
       <header>
-        <h1>Buscador de películas</h1>
+        <h1>Film Search</h1>
         <form className="form" onSubmit={handleSubmit}>
           <div className="input-container">
             <input
@@ -82,17 +82,17 @@ function App() {
               name="query"
               placeholder="Avengers, Star Wars, The Matrix..."
             />
-            <button type="submit">Buscar</button>
+            <button type="submit">Search</button>
           </div>
           <div className="input-container">
-            <label htmlFor="sort">Ordenar por título</label>
+            <label htmlFor="sort">Sort by title</label>
             <input type="checkbox" onChange={handleSort} checked={sort} />
           </div>
         </form>
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </header>
 
-      <main>{loading ? <p>Cargando...</p> : <Movies movies={movies} />}</main>
+      <main>{loading ? <p>Loading...</p> : <Films films={films} />}</main>
     </div>
   )
 }
