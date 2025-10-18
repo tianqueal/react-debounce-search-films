@@ -4,33 +4,38 @@ import './App.css'
  * que persiste durante todo el ciclo de vida del componente
  * y no cambia el renderizado del componente
  */
-import { useEffect, useState, useRef } from 'react'
+import { useState, useRef, useMemo, useCallback } from 'react'
 import { Movies } from './components/Movies'
 import { useMovies } from './hooks/useMovies'
-/* import debounce from 'just-debounce-it' */
+import debounce from 'just-debounce-it'
 
 const useSearch = () => {
-  const [search, updateSearch] = useState('')
+  const [search, setSearch] = useState('')
   const [error, setError] = useState(null)
   const isFirstInput = useRef(true)
 
-  useEffect(() => {
+  const updateSearch = useCallback((newSearch) => {
     if (isFirstInput.current) {
-      isFirstInput.current = search === ''
-      return
+      isFirstInput.current = newSearch === ''
+      if (isFirstInput.current) {
+        setError(null)
+        setSearch(newSearch)
+        return
+      }
     }
 
-    if (search === '') {
+    if (newSearch === '') {
       setError('No se puede buscar una película vacía')
-      return
-    }
-
-    if (search.length < 3) {
+    } else if (newSearch.match(/^\d+$/)) {
+      setError('No se puede buscar una película con un número')
+    } else if (newSearch.length < 3) {
       setError('La búsqueda debe tener al menos 3 caracteres')
+    } else {
+      setError(null)
     }
+    setSearch(newSearch)
+  }, [])
 
-    setError(null)
-  }, [search])
   return { search, updateSearch, error }
 }
 
@@ -39,19 +44,15 @@ function App() {
   const { search, updateSearch, error } = useSearch()
   const { movies, getMovies, loading } = useMovies({ search, sort })
 
-  /* const debounceGetMovies = useCallback(
-    debounce((search) => {
-      console.log('search', search)
+  const debouncedGetMovies = useMemo(
+    () => debounce(search => {
       getMovies({ search })
-    }, 400),
-    [getMovies]
-  ) */
+    }, 300)
+    , [getMovies]
+  )
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    /* const { query } = Object.fromEntries(new window.FormData(e.target)) */
-    /* const fields = new window.FormData(e.target)
-    const query = fields.get('query') */
+  const handleSubmit = (event) => {
+    event.preventDefault()
     getMovies({ search })
   }
 
@@ -59,11 +60,10 @@ function App() {
     setSort(!sort)
   }
 
-  const handleChange = (e) => {
-    const newSearch = e.target.value
+  const handleChange = (event) => {
+    const newSearch = event.target.value
     updateSearch(newSearch)
-    /* debounceGetMovies(newSearch) */
-    getMovies({ search: newSearch })
+    debouncedGetMovies(newSearch)
   }
 
   return (
@@ -71,17 +71,27 @@ function App() {
       <header>
         <h1>Buscador de películas</h1>
         <form className="form" onSubmit={handleSubmit}>
-          <input
-            onChange={handleChange}
-            value={search}
-            type="text"
-            placeholder="Avengers, Star Wars, The Matrix..."
-          />
-          <input type="checkbox" onChange={handleSort} checked={sort} />
-          <button type="submit">Buscar</button>
+          <div className="input-container">
+            <input
+              style={{
+                border: '1px solid transparent',
+                borderColor: error ? 'red' : 'transparent',
+              }}
+              onChange={handleChange}
+              value={search}
+              name="query"
+              placeholder="Avengers, Star Wars, The Matrix..."
+            />
+            <button type="submit">Buscar</button>
+          </div>
+          <div className="input-container">
+            <label htmlFor="sort">Ordenar por título</label>
+            <input type="checkbox" onChange={handleSort} checked={sort} />
+          </div>
         </form>
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </header>
+
       <main>{loading ? <p>Cargando...</p> : <Movies movies={movies} />}</main>
     </div>
   )
